@@ -11,3 +11,5 @@ compile crate and run from the checkout dir so that the nix flake is accessible 
 then that's it
 
 TODO make this better
+
+![image](https://github.com/user-attachments/assets/bdc58c75-6645-4cf9-a397-6eb1681c2e35)
