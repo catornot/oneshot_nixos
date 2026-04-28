@@ -36,6 +36,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     .find("libboost_program_options")
                                     .is_none()
                                 && name.to_string_lossy().find("ruby").is_none()
+                                && name.to_string_lossy().find("vorbis").is_none()
+                                && name.to_string_lossy().find("SDL").is_none()
+                                && name.to_string_lossy().find("libsound").is_none()
+                                && name.to_string_lossy().find("openal").is_none()
                                 // TODO: get libxfconf-0.so.2 in deps.nix
                                 && name.to_string_lossy().find("libxfconf").is_none()
                         })
