@@ -13,5 +13,9 @@ pkgs.symlinkJoin {
     # new stuff
     libmodplug.out
     libwebp.out
+
+    # solstice
+    # python stuff is left from the game libs
+    libsForQt5.qt5.qtbase.out
   ];
 }
