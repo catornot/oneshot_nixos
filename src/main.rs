@@ -29,19 +29,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     && path
                         .file_name()
                         .map(|name| {
-                            name.to_string_lossy().find(".so").is_some()
-                                && name.to_string_lossy().find("steam_api").is_none()
-                                && name
-                                    .to_string_lossy()
-                                    .find("libboost_program_options")
-                                    .is_none()
-                                && name.to_string_lossy().find("ruby").is_none()
-                                && name.to_string_lossy().find("vorbis").is_none()
-                                && name.to_string_lossy().find("SDL").is_none()
-                                && name.to_string_lossy().find("libsound").is_none()
-                                && name.to_string_lossy().find("openal").is_none()
-                                // TODO: get libxfconf-0.so.2 in deps.nix
-                                && name.to_string_lossy().find("libxfconf").is_none()
+                            // match for the libs that are broken
+                            name.to_string_lossy().find("libcrypt").is_some()
+                                || name.to_string_lossy().find("pixman").is_some()
+                                || name.to_string_lossy().find("librt").is_some()
+                                || name.to_string_lossy().find("libsigc").is_some()
+                                || name.to_string_lossy().find("physfs").is_some()
+                                || name.to_string_lossy().find("webp").is_some()
+                                || name.to_string_lossy().find("libQt5").is_some()
+                                || name.to_string_lossy().find("modplug").is_some()
                         })
                         .unwrap_or_default() =>
             {
@@ -136,6 +132,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         };
 
         let dest = oneshot_path.join(lib.file_name().unwrap());
+
+        if dest.is_file() {
+            eprintln!("{} is a file", dest.display());
+            continue;
+        }
 
         if dest.exists() {
             fs::remove_file(&dest)?;
