@@ -1,12 +1,29 @@
 use std::{
-    fs,
-    os::unix::fs::symlink,
+    fs::{self, Permissions},
+    io::Write,
+    os::unix::fs::{PermissionsExt, symlink},
     process::{Command, Stdio},
 };
 
 use steamlocate::SteamDir;
 
 const ONESHOT_ID: u32 = 420530;
+
+const WRAPPER: &str = r#"
+#!/bin/sh
+
+export LD_PRELOAD="libexec_hook.so"
+export XDG_CURRENT_DESKTOP="XFCE"
+export DESKTOP_SESSION="xfce"
+# export PATH="$PWD/xfconf-query:$PATH"
+./.oneshot-wrapped "$@"
+"#;
+
+const XFCONF_QUERY: &str = r#"
+#!/bin/sh
+
+# stub
+"#;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let oneshot_path = SteamDir::locate()
@@ -40,8 +57,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 && name.to_string_lossy().find("SDL").is_none()
                                 && name.to_string_lossy().find("libsound").is_none()
                                 && name.to_string_lossy().find("openal").is_none()
-                                // TODO: get libxfconf-0.so.2 in deps.nix
-                                && name.to_string_lossy().find("libxfconf").is_none()
+                                && name.to_string_lossy().find("tiff").is_none()
+                                && name.to_string_lossy().find("FLAC").is_none()
+                                && name.to_string_lossy().find("python").is_none()
                         })
                         .unwrap_or_default() =>
             {
@@ -142,6 +160,35 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         symlink(&lib, &dest)?;
     }
+
+    let game_path = oneshot_path.join("oneshot");
+    let game_wrapped = oneshot_path.join(".oneshot-wrapped");
+
+    let wrapper_contents = fs::read_to_string(&game_path).unwrap_or_default();
+    if game_path.exists() && !wrapper_contents.contains("#!/bin/sh") {
+        fs::copy(&game_path, &game_wrapped)?;
+        fs::remove_file(&game_path)?;
+
+        fs::set_permissions(game_wrapped, Permissions::from_mode(0o775))?;
+
+        let mut wrapper = fs::File::create(game_path)?;
+        wrapper.write_all(WRAPPER.as_bytes())?;
+
+        wrapper.set_permissions(Permissions::from_mode(0o774))?;
+    } else if wrapper_contents != WRAPPER {
+        let mut wrapper = fs::File::create(game_path)?;
+        wrapper.write_all(WRAPPER.as_bytes())?;
+
+        wrapper.set_permissions(Permissions::from_mode(0o774))?;
+    }
+
+    let mut stub = fs::File::create(oneshot_path.join("xfconf-query"))?;
+    stub.write_all(XFCONF_QUERY.as_bytes())?;
+
+    stub.set_permissions(Permissions::from_mode(0o774))?;
+
+    fs::File::create(oneshot_path.join("wallpaper-cmd"))?
+        .write_all("nix run nixpkgs#awww -- img".as_bytes())?;
 
     Ok(())
 }

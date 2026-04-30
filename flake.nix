@@ -27,7 +27,11 @@
         formatter = pkgs.nixfmt-tree;
 
         packages = {
-          deps = pkgs.callPackage ./nix/deps.nix { };
+          deps = pkgs.callPackage ./nix/deps.nix { inherit (self.packages.${system}) xconf-stub exec_hook; };
+          install = pkgs.callPackage ./nix/install.nix { };
+          xconf-stub = pkgs.callPackage ./nix/xconf-stub.nix { };
+          exec_hook = pkgs.callPackage ./nix/exec_hook.nix { };
+          default = self.packages.${system}.install;
         };
 
         devShells.default = pkgs.mkShell {
